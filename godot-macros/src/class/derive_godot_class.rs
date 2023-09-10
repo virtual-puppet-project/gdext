@@ -4,7 +4,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
-use proc_macro2::{Ident, Punct, TokenStream};
+use proc_macro2::{Delimiter, Group, Ident, Punct, TokenStream, TokenTree};
 use quote::{format_ident, quote};
 use venial::{Declaration, NamedField, Struct, StructFields};
 
@@ -18,7 +18,8 @@ pub fn derive_godot_class(decl: Declaration) -> ParseResult<TokenStream> {
         .ok_or_else(|| venial::Error::new("Not a valid struct"))?;
 
     let struct_cfg = parse_struct_attributes(class)?;
-    let fields = parse_fields(class)?;
+    let mut fields = parse_fields(class)?;
+    fields.all_fields.extend(struct_cfg.standlone_properties);
 
     let class_name = &class.name;
     let class_name_str: String = struct_cfg
@@ -119,6 +120,7 @@ fn parse_struct_attributes(class: &Struct) -> ParseResult<ClassAttributes> {
     let mut is_tool = false;
     let mut is_editor_plugin = false;
     let mut rename: Option<Ident> = None;
+    let mut standlone_properties = vec![];
 
     // #[class] attribute on struct
     if let Some(mut parser) = KvParser::parse(&class.attributes, "class")? {
@@ -143,12 +145,50 @@ fn parse_struct_attributes(class: &Struct) -> ParseResult<ClassAttributes> {
         parser.finish()?;
     }
 
+    // #[property] attributes on struct
+    for attribute in class.attributes.iter() {
+        if let Some(mut parser) = KvParser::parse(&[attribute.clone()], "property")? {
+            let name = parser.handle_expr_required("name")?.to_string();
+            let ty = parser.handle_expr_required("type")?;
+
+            let field_var = FieldVar::new_from_kv(&mut parser)?;
+            if field_var.getter.is_omitted() && field_var.setter.is_omitted() {
+                bail!(
+                    parser.span(),
+                    "#[property] must define at least 1 getter or setter"
+                )?;
+            }
+            if field_var.getter.is_generated() || field_var.setter.is_generated() {
+                bail!(
+                    parser.span(),
+                    "#[property] does not support generated getters and setters"
+                )?;
+            }
+
+            let mut field = Field {
+                name: ident(name.as_str()),
+                ty: venial::TyExpr {
+                    tokens: vec![TokenTree::Group(Group::new(Delimiter::None, ty))],
+                },
+                default: None,
+                var: None,
+                export: None,
+            };
+            field.var = Some(field_var);
+
+            standlone_properties.push(field);
+
+            parser.finish()?;
+        }
+    }
+
     Ok(ClassAttributes {
         base_ty,
         has_generated_init,
         is_tool,
         is_editor_plugin,
         rename,
+        standlone_properties,
     })
 }
 
@@ -230,6 +270,7 @@ struct ClassAttributes {
     is_tool: bool,
     is_editor_plugin: bool,
     rename: Option<Ident>,
+    standlone_properties: Vec<Field>,
 }
 
 fn make_godot_init_impl(class_name: &Ident, fields: Fields) -> TokenStream {

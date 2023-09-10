@@ -338,3 +338,22 @@ func test_callable_refcount():
 	var method := Callable(self, "sample_func")
 	assert(method.is_valid())
 	test_obj.free()
+
+func test_standalone_property():
+	var standalone_property := StandaloneProperty.new()
+
+	assert_eq(standalone_property.my_int, 0)
+	assert_eq(standalone_property.readonly_int, 0)
+	assert_eq(standalone_property.int_array, [0])
+
+	standalone_property.my_int = 2
+
+	assert_eq(standalone_property.my_int, 2)
+	assert_eq(standalone_property.readonly_int, 2)
+	assert_eq(standalone_property.int_array, [2])
+
+	standalone_property.int_array = [10, 11]
+
+	assert_eq(standalone_property.my_int, 10)
+	assert_eq(standalone_property.readonly_int, 10)
+	assert_eq(standalone_property.int_array, [10])

@@ -126,6 +126,10 @@ impl GetterSetter {
     pub fn is_omitted(&self) -> bool {
         matches!(self, GetterSetter::Omitted)
     }
+
+    pub fn is_generated(&self) -> bool {
+        matches!(self, GetterSetter::Generated)
+    }
 }
 
 /// Used to determine whether a [`GetterSetter`] is supposed to be a getter or setter.
@@ -212,7 +216,8 @@ impl GetterSetterImpl {
         }
     }
 
-    fn from_custom_impl(function_name: &Ident) -> Self {
+    /// Create a getters/setter impl from a user-defined function.
+    pub(super) fn from_custom_impl(function_name: &Ident) -> Self {
         Self {
             function_name: function_name.clone(),
             function_impl: TokenStream::new(),
