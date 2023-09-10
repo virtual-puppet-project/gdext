@@ -318,7 +318,10 @@ use crate::util::ident;
 /// for more information and further customization.
 ///
 /// This is very similar to [GDScript's `@tool` feature](https://docs.godotengine.org/en/stable/tutorials/plugins/running_code_in_the_editor.html).
-#[proc_macro_derive(GodotClass, attributes(class, base, var, export, init, signal))]
+#[proc_macro_derive(
+    GodotClass,
+    attributes(class, base, var, export, init, signal, property)
+)]
 pub fn derive_godot_class(input: TokenStream) -> TokenStream {
     translate(input, class::derive_godot_class)
 }
