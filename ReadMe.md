@@ -1,3 +1,10 @@
+# Vpuppr fork of gdext
+
+Contains usability changes rejected from upstream.
+
+- `#[property(...)]` macro for manually registering properties
+- Implement `Default` for `Callable`, `Plane`, and `RID`
+
 ![logo.png](assets/gdext-ferris.png)
 
 # Rust bindings for Godot 4
