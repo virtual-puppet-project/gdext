@@ -298,6 +298,12 @@ impl std::fmt::Display for Plane {
     }
 }
 
+impl Default for Plane {
+    fn default() -> Self {
+        Self::invalid()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::assert_eq_approx;

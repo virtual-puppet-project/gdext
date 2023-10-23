@@ -320,6 +320,12 @@ impl fmt::Display for Callable {
     }
 }
 
+impl Default for Callable {
+    fn default() -> Self {
+        Self::invalid()
+    }
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------------------------
 // Callbacks for custom implementations
 
